@@ -139,12 +139,7 @@ class PitchStrategyTest {
         return !zone.startsWith("x");
     }
 
-    private boolean isValidZone(String zone) {
-        if (zone.startsWith("x")) {
-            return zone.matches("x[1-4]");
-        }
-        return zone.matches("[1-9]");
-    }
+
 
     // 在原有的PitchStrategyTest類中添加以下測試方法
 
@@ -176,20 +171,37 @@ class PitchStrategyTest {
         Map<String, Integer> invalidPitches = new HashMap<>();
         Map<String, Integer> invalidHits = new HashMap<>();
 
-        // 添加非法區域標識
-        invalidPitches.put("x5", 100);  // 非法壞球區
-        invalidPitches.put("0", 100);   // 非法好球區
-        invalidPitches.put("10", 100);  // 非法好球區
+        // 混合有效和無效區域
+        // 無效區域
+        invalidPitches.put("x5", 100);   // 非法壞球區
+        invalidPitches.put("0", 100);    // 非法好球區
+        invalidPitches.put("10", 100);   // 非法好球區
+
+        // 有效區域
+        invalidPitches.put("5", 100);    // 有效好球區
+        invalidPitches.put("x1", 100);   // 有效壞球區
+
+        // 對應的安打數據
         invalidHits.put("x5", 20);
         invalidHits.put("0", 20);
         invalidHits.put("10", 20);
+        invalidHits.put("5", 40);
+        invalidHits.put("x1", 10);
 
         Batter invalidBatter = new Batter(invalidPitches, invalidHits);
         PitchResult result = PitchStrategy.pitch(invalidBatter, true);
 
-        // 驗證結果是否為有效區域
-        assertTrue(isValidZone(result.getStartZone()), "起始區域應為有效區域");
-        assertTrue(isValidZone(result.getEndZone()), "結束區域應為有效區域");
+        // 驗證結果
+        assertTrue(isValidZone(result.getStartZone()),
+                "起始區域應為有效區域，實際為: " + result.getStartZone());
+        assertTrue(isValidZone(result.getEndZone()),
+                "結束區域應為有效區域，實際為: " + result.getEndZone());
+    }
+    private boolean isValidZone(String zone) {
+        if (zone.startsWith("x")) {
+            return zone.matches("x[1-4]");
+        }
+        return zone.matches("[1-9]");
     }
 
     @ParameterizedTest
