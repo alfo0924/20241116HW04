@@ -270,4 +270,6 @@ class PitchStrategyTest {
                 String.format("%s 的起始和結束區域必須有效", pitchType));
     }
 
+
+
 }
