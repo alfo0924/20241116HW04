@@ -1,5 +1,8 @@
 package org.example;
 
+
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,7 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("投手策略測試")
 class PitchStrategyTest {
@@ -22,55 +26,17 @@ class PitchStrategyTest {
 
     @BeforeEach
     void setUp() {
-        // 初始化大谷翔平的打擊數據
-        ohtaniPitchBreakdown = new HashMap<>();
-        ohtaniHitsBreakdown = new HashMap<>();
-
-        // 從圖片讀取的Pitch Breakdown數據
-        initializePitchBreakdown();
-        // 從圖片讀取的Base Hits Breakdown數據
-        initializeHitsBreakdown();
-
+        // 從CSV檔案讀取數據
+        ohtaniPitchBreakdown = PitchStrategy.loadDataFromCsv("pitch_breakdown.csv");
+        ohtaniHitsBreakdown = PitchStrategy.loadDataFromCsv("base_hits_breakdown.csv");
         ohtani = new Batter(ohtaniPitchBreakdown, ohtaniHitsBreakdown);
-    }
-
-    private void initializePitchBreakdown() {
-        ohtaniPitchBreakdown.put("1", 131);
-        ohtaniPitchBreakdown.put("2", 158);
-        ohtaniPitchBreakdown.put("3", 107);
-        ohtaniPitchBreakdown.put("4", 189);
-        ohtaniPitchBreakdown.put("5", 185);
-        ohtaniPitchBreakdown.put("6", 122);
-        ohtaniPitchBreakdown.put("7", 176);
-        ohtaniPitchBreakdown.put("8", 183);
-        ohtaniPitchBreakdown.put("9", 112);
-        ohtaniPitchBreakdown.put("x1", 297);
-        ohtaniPitchBreakdown.put("x2", 248);
-        ohtaniPitchBreakdown.put("x3", 549);
-        ohtaniPitchBreakdown.put("x4", 381);
-    }
-
-    private void initializeHitsBreakdown() {
-        ohtaniHitsBreakdown.put("1", 9);
-        ohtaniHitsBreakdown.put("2", 15);
-        ohtaniHitsBreakdown.put("3", 11);
-        ohtaniHitsBreakdown.put("4", 20);
-        ohtaniHitsBreakdown.put("5", 41);
-        ohtaniHitsBreakdown.put("6", 15);
-        ohtaniHitsBreakdown.put("7", 20);
-        ohtaniHitsBreakdown.put("8", 21);
-        ohtaniHitsBreakdown.put("9", 12);
-        ohtaniHitsBreakdown.put("x1", 8);
-        ohtaniHitsBreakdown.put("x2", 10);
-        ohtaniHitsBreakdown.put("x3", 5);
-        ohtaniHitsBreakdown.put("x4", 10);
     }
 
     @Test
     @DisplayName("測試讀取球種資料")
     void testLoadPitchTypes() {
         List<PitchType> pitchTypes = PitchStrategy.loadPitchTypes("pitch_types.csv");
-        assertNotNull(pitchTypes);
+        Assertions.assertNotNull(pitchTypes);
         assertEquals(9, pitchTypes.size(), "應該有9種球種");
 
         // 測試四縫線快速球的資料
@@ -117,11 +83,61 @@ class PitchStrategyTest {
         );
     }
 
+    @Test
+    @DisplayName("測試相同打擊率的處理")
+    void testEqualBattingAverages() {
+        Map<String, Integer> equalPitches = new HashMap<>();
+        Map<String, Integer> equalHits = new HashMap<>();
+
+        // 設置兩個區域具有相同的打擊率 (0.2)
+        equalPitches.put("4", 100);
+        equalPitches.put("6", 100);
+        equalHits.put("4", 20);
+        equalHits.put("6", 20);
+
+        Batter equalBatter = new Batter(equalPitches, equalHits);
+        PitchResult result = PitchStrategy.pitch(equalBatter, false);
+
+        assertTrue(
+                result.getStartZone().equals("4") || result.getStartZone().equals("6"),
+                "起始區域應該是相同打擊率的區域之一"
+        );
+    }
+
+    @Test
+    @DisplayName("測試非法區域標識的處理")
+    void testInvalidZoneIdentifier() {
+        Map<String, Integer> invalidPitches = new HashMap<>();
+        Map<String, Integer> invalidHits = new HashMap<>();
+
+        // 設置測試數據
+        invalidPitches.put("x5", 100);
+        invalidPitches.put("0", 100);
+        invalidPitches.put("10", 100);
+        invalidPitches.put("5", 100);
+        invalidPitches.put("x1", 100);
+
+        invalidHits.put("x5", 20);
+        invalidHits.put("0", 20);
+        invalidHits.put("10", 20);
+        invalidHits.put("5", 40);
+        invalidHits.put("x1", 10);
+
+        Batter invalidBatter = new Batter(invalidPitches, invalidHits);
+        PitchResult result = PitchStrategy.pitch(invalidBatter, true);
+
+        assertTrue(PitchStrategy.isValidZone(result.getStartZone()),
+                "起始區域應為有效區域，實際為: " + result.getStartZone());
+        assertTrue(PitchStrategy.isValidZone(result.getEndZone()),
+                "結束區域應為有效區域，實際為: " + result.getEndZone());
+    }
+
     @ParameterizedTest
     @DisplayName("測試不同count的投球策略")
     @MethodSource("provideCountScenarios")
     void testPitchCountStrategies(int balls, int strikes, boolean shouldThrowStrike) {
         PitchResult result = PitchStrategy.pitch(ohtani, !shouldThrowStrike);
+
         if (shouldThrowStrike) {
             assertTrue(PitchStrategy.isStrikeZone(result.getEndZone()),
                     String.format("在%d-%d count時應該投好球", balls, strikes));
@@ -141,6 +157,17 @@ class PitchStrategyTest {
                 Arguments.of(0, 2, true),   // 0-2 應該投好球
                 Arguments.of(2, 2, true)    // 2-2 應該投好球
         );
+    }
+
+    @Test
+    @DisplayName("測試CSV數據讀取")
+    void testCsvDataLoading() {
+        Assertions.assertNotNull(ohtaniPitchBreakdown);
+        Assertions.assertNotNull(ohtaniHitsBreakdown);
+        assertEquals(13, ohtaniPitchBreakdown.size(), "應該有13個區域的投球數據");
+        assertEquals(13, ohtaniHitsBreakdown.size(), "應該有13個區域的安打數據");
+        assertEquals(185, ohtaniPitchBreakdown.get("5"), "5號位置的投球數應該是185");
+        assertEquals(41, ohtaniHitsBreakdown.get("5"), "5號位置的安打數應該是41");
     }
 
     private void validatePitchResult(PitchResult result, boolean ballIsOK, String pitchType) {
