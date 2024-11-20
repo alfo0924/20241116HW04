@@ -6,37 +6,6 @@
 - `PitchStrategy`: 投球策略類別，決定投球方式
 - `PitchStrategyTest`: 測試類別，驗證系統功能
 
-## 2. 核心功能測試
-```java
-// 打擊熱區分析
-testOhtaniHotZones()
-
-// 球種策略測試
-testPitchTypes()
-
-// 特殊情況處理
-testEqualBattingAverages()
-testInvalidZoneIdentifier()
-
-// Count策略測試
-testPitchCountStrategies()
-```
-
-## 3. 測試覆蓋率
-```
-覆蓋率統計：
-- Instructions: 54% 覆蓋
-- Branches: 66% 覆蓋
-- Lines: 204行中112行已覆蓋
-- Methods: 56個中24個已覆蓋
-- Classes: 5個中4個已覆蓋
-```
-
-## 4. 主要測試重點
-1. 投手策略的正確性
-2. 球種組合的有效性
-3. 特殊情況的處理
-4. 數據驗證的完整性
 
 
 
@@ -67,6 +36,31 @@ testPitchCountStrategies()
 - 測試覆蓋率：54%
 - 包含多種測試場景
 
+## 2. 核心功能測試
+```java
+// 打擊熱區分析
+testOhtaniHotZones()
+
+// 球種策略測試
+testPitchTypes()
+
+// 特殊情況處理
+testEqualBattingAverages()
+testInvalidZoneIdentifier()
+
+// Count策略測試
+testPitchCountStrategies()
+```
+
+## 3. 測試覆蓋率
+```
+覆蓋率統計：
+- Instructions: 54% 覆蓋
+- Branches: 66% 覆蓋
+- Lines: 204行中112行已覆蓋
+- Methods: 56個中24個已覆蓋
+- Classes: 5個中4個已覆蓋
+```
 
 ## 1. 覆蓋率報告分析
 ```
